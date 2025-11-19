@@ -1,4 +1,4 @@
-# Intelligent robotics assignment 1 -- group n. 18
+# Intelligent robotics assignment 1 - group n. 18
 ## Setup
 1. Clone this repository inside the `/ws_18_assignments/src` folder:
   ```bash
