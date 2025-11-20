@@ -1,1 +1,58 @@
+# Build directories
+build/
+install/
+log/
 
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# C++ compiled objects
+*.o
+*.lo
+*.slo
+*.ko
+*.obj
+*.elf
+*.a
+*.lib
+*.dylib
+*.dll
+*.so.*
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Colcon specific
+COLCON_IGNORE
+
+# Testing
+.pytest_cache/
+*.coverage
+htmlcov/
+
+# Documentation
+*.dox
+doxygen_generated/
+
+
+# Launch files generated
+*.launch.py.bak
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Setup files
+*.egg-info/
+dist/
