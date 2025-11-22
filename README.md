@@ -11,7 +11,7 @@
   colcon build
   ```
 3. Run launch file:
-   ```bash
+  ```bash
   source install/setup.bash
   ros2 launch ir_launch assignment_1.launch.py
   ```
