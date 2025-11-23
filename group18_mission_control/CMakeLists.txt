@@ -13,7 +13,27 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(rclcpp_action REQUIRED)
 
+add_executable(navigate_to_pose_client src/navigate_to_pose_client.cpp)
+
+ament_target_dependencies(navigate_to_pose_client
+  rclcpp
+  rclcpp_action
+  nav2_msgs
+  geometry_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+)
+
+install(TARGETS
+  navigate_to_pose_client
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 add_executable(lifecycle_manager 
   src/lifecycle_manager.cpp
