@@ -1,13 +1,10 @@
 #include "group18_mission_control/lifecycle_manager.hpp"
-
 using namespace std::chrono_literals;
-using ManageNodes = nav2_msgs::srv::ManageLifecycleNodes;
 
 LifecycleManager::LifecycleManager() : Node("lifecycle_manager_client")
 {
-  client_localization_ = create_client<ManageNodes>("/lifecycle_manager_localization/manage_nodes");
-  client_navigation_ = create_client<ManageNodes>("/lifecycle_manager_navigation/manage_nodes");
-
+  client_localization_ = create_client<nav2_msgs::srv::ManageLifecycleNodes>("/lifecycle_manager_localization/manage_nodes");
+  client_navigation_ = create_client<nav2_msgs::srv::ManageLifecycleNodes>("/lifecycle_manager_navigation/manage_nodes");
   startup_thread_ = std::thread(&LifecycleManager::startupSequence, this);
   startup_thread_.detach();
 }
@@ -32,7 +29,7 @@ void LifecycleManager::startupSequence()
   RCLCPP_INFO(get_logger(), "Nav2 stack started successfully!");
 }
 
-bool LifecycleManager::callStartup(rclcpp::Client<ManageNodes>::SharedPtr client)
+bool LifecycleManager::callStartup(rclcpp::Client<nav2_msgs::srv::ManageLifecycleNodes>::SharedPtr client)
 {
   RCLCPP_INFO(get_logger(), "Waiting for service...");
 
@@ -42,8 +39,8 @@ bool LifecycleManager::callStartup(rclcpp::Client<ManageNodes>::SharedPtr client
     return false;
   }
 
-  auto request = std::make_shared<ManageNodes::Request>();
-  request->command = ManageNodes::Request::STARTUP;
+  auto request = std::make_shared<nav2_msgs::srv::ManageLifecycleNodes::Request>();
+  request->command = nav2_msgs::srv::ManageLifecycleNodes::Request::STARTUP;
 
   RCLCPP_INFO(get_logger(), "Sending STARTUP...");
   auto future = client->async_send_request(request);
