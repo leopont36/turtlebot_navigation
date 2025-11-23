@@ -36,4 +36,4 @@ private:
     void feedback_callback(GoalHandle::SharedPtr, const std::shared_ptr<const NavigateToPoseAction::Feedback> feedback);
 };
 
-#endif // NAVIGATE_TO_POSE_MANAGER_
+#endif // NAVIGATE_TO_POSE_CLIENT_
