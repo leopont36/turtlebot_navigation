@@ -34,9 +34,9 @@ launch:
       namespace: apriltag
       remap:
       - from: /apriltag/image_rect
-        to: /camera/image_rect
+        to: /rgb_camera/image
       - from: /camera/camera_info
-        to: /camera/camera/color/camera_info
+        to: /rgb_camera/camera_info 
 
       param:
       - from: $(find-pkg-share group18_apriltag_ros)/cfg/tags_36h11.yaml
