@@ -26,11 +26,11 @@ private:
     std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
     rclcpp::TimerBase::SharedPtr timer_;
 
-    geometry_msgs::msg::PoseStamped goal_pose;
+    geometry_msgs::msg::PoseStamped goal_pose; // final position to reach
     bool goal_sent_ = false; // to make sure the goal is sent
 
-    void timer_callback();
-    bool calculate_goal_pose();
+    void timer_callback(); // to repeatily check if transforms of the apriltag's positions have been published
+    bool calculate_goal_pose(); // to initialize goal_pose to position between apriltags
 
     void send_goal();
     void feedback_callback(GoalHandle::SharedPtr, const std::shared_ptr<const NavigateToPoseAction::Feedback> feedback);

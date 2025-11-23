@@ -8,7 +8,7 @@ NavigateToPoseClient::NavigateToPoseClient() : Node("navigate_to_pose_client")
     action_client_ = rclcpp_action::create_client<NavigateToPoseAction>(
         this, "navigate_to_pose");
     
-    // setup if2
+    // setup tf2
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
@@ -34,17 +34,18 @@ void NavigateToPoseClient::timer_callback()
 
 bool NavigateToPoseClient::calculate_goal_pose()
 {
+    // to store transforms for the apriltags
     geometry_msgs::msg::TransformStamped ts_apriltag1;
     geometry_msgs::msg::TransformStamped ts_apriltag2;
 
     try {
-        // check if transforms exist before looking them up (prevents error spam)
+        // check if transforms exist before looking them up
         if (!tf_buffer_->canTransform("map", "tag36h11:1", tf2::TimePointZero) ||
             !tf_buffer_->canTransform("map", "tag36h11:10", tf2::TimePointZero)) {
             RCLCPP_INFO(this->get_logger(), "Waiting for AprilTags to be detected...");
             return false; 
         }
-
+        // transforms exist, get apriltag's transforms w.r.t. map frame
         ts_apriltag1 = tf_buffer_->lookupTransform("map", "tag36h11:1", tf2::TimePointZero);
         ts_apriltag2 = tf_buffer_->lookupTransform("map", "tag36h11:10", tf2::TimePointZero);
     } 
