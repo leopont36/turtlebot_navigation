@@ -18,7 +18,9 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(rclcpp_action REQUIRED)
 
-add_executable(navigate_to_pose_client src/navigate_to_pose_client.cpp)
+add_executable(navigate_to_pose_client
+  src/navigate_to_pose_client.cpp
+)
 
 ament_target_dependencies(navigate_to_pose_client
   rclcpp
@@ -28,6 +30,11 @@ ament_target_dependencies(navigate_to_pose_client
   tf2
   tf2_ros
   tf2_geometry_msgs
+)
+
+target_include_directories(navigate_to_pose_client PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
 )
 
 install(TARGETS
