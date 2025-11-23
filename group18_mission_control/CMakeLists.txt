@@ -7,9 +7,53 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
+
+
+
+add_executable(lifecycle_manager 
+  src/lifecycle_manager.cpp
+)
+
+target_include_directories(lifecycle_manager PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+ament_target_dependencies(lifecycle_manager
+  rclcpp
+  nav2_msgs
+)
+
+add_executable(initial_pose_publisher 
+  src/initial_pose_publisher.cpp
+)
+
+target_include_directories(initial_pose_publisher PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+ament_target_dependencies(initial_pose_publisher
+  rclcpp
+  nav_msgs
+  geometry_msgs
+  lifecycle_msgs
+)
+
+install(TARGETS
+  lifecycle_manager
+  initial_pose_publisher
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY launch/
+  DESTINATION share/${PROJECT_NAME}/launch
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

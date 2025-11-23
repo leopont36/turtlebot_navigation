@@ -9,6 +9,9 @@
   ```bash
   cd ..
   colcon build
-  source install/setup.bash
   ```
-  
+3. Run launch file:
+  ```bash
+  source install/setup.bash
+  ros2 launch ir_launch assignment_1.launch.py
+  ```

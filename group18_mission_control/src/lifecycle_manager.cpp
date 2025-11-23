@@ -1,34 +1,76 @@
-#include "lifecycle_manager.hpp"
+#include "group18_mission_control/lifecycle_manager.hpp"
+
+using namespace std::chrono_literals;
+using ManageNodes = nav2_msgs::srv::ManageLifecycleNodes;
 
 LifecycleManager::LifecycleManager() : Node("lifecycle_manager_client")
 {
-  client_localization_ = create_client<nav2_msgs::srv::ManageLifecycleNodes>("/lifecycle_manager_localization/manage_nodes");
-  client_navigation_ = create_client<nav2_msgs::srv::ManageLifecycleNodes>("/lifecycle_manager_navigation/manage_nodes");
+  client_localization_ = create_client<ManageNodes>("/lifecycle_manager_localization/manage_nodes");
+  client_navigation_ = create_client<ManageNodes>("/lifecycle_manager_navigation/manage_nodes");
+
+  startup_thread_ = std::thread(&LifecycleManager::startupSequence, this);
+  startup_thread_.detach();
 }
 
-void LifecycleManager::startup()
+void LifecycleManager::startupSequence()
 {
-  callStartup(client_localization_, "Localization");
-  callStartup(client_navigation_, "Navigation");
-}
+  std::this_thread::sleep_for(500ms);
+  RCLCPP_INFO(get_logger(), "Starting Nav2 stack...");
 
-void LifecycleManager::callStartup(rclcpp::Client<nav2_msgs::srv::ManageLifecycleNodes>::SharedPtr client, const std::string & name)
-{
-  if (!client->wait_for_service(std::chrono::seconds(5))) 
+  if (!callStartup(client_localization_))
   {
-    RCLCPP_ERROR(get_logger(), "%s service not available", name.c_str());
+    RCLCPP_ERROR(get_logger(), "Failed to start localization, aborting");
     return;
   }
 
-  auto request = std::make_shared<nav2_msgs::srv::ManageLifecycleNodes::Request>();
-  request->command = nav2_msgs::srv::ManageLifecycleNodes::Request::STARTUP;
+  if (!callStartup(client_navigation_))
+  {
+    RCLCPP_ERROR(get_logger(), "Failed to start navigation");
+    return;
+  }
 
+  RCLCPP_INFO(get_logger(), "Nav2 stack started successfully!");
+}
+
+bool LifecycleManager::callStartup(rclcpp::Client<ManageNodes>::SharedPtr client)
+{
+  RCLCPP_INFO(get_logger(), "Waiting for service...");
+
+  if (!client->wait_for_service(10s))
+  {
+    RCLCPP_ERROR(get_logger(), "Service not available");
+    return false;
+  }
+
+  auto request = std::make_shared<ManageNodes::Request>();
+  request->command = ManageNodes::Request::STARTUP;
+
+  RCLCPP_INFO(get_logger(), "Sending STARTUP...");
   auto future = client->async_send_request(request);
-  
-  if (rclcpp::spin_until_future_complete(shared_from_this(), future) == rclcpp::FutureReturnCode::SUCCESS && future.get()->success)
-    RCLCPP_INFO(get_logger(), "%s started", name.c_str());
-  
-  else 
-    RCLCPP_ERROR(get_logger(), "%s startup failed", name.c_str());
-  
+
+  auto status = future.wait_for(30s);
+  if (status != std::future_status::ready)
+  {
+    RCLCPP_ERROR(get_logger(), "Startup timeout");
+    return false;
+  }
+
+  auto response = future.get();
+  if (response->success)
+  {
+    RCLCPP_INFO(get_logger(), "Started successfully");
+    return true;
+  }
+
+  RCLCPP_ERROR(get_logger(), "Startup failed");
+  return false;
+}
+
+int main(int argc, char** argv)
+{
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<LifecycleManager>();
+  rclcpp::spin(node);
+  rclcpp::shutdown();
+  return 0;
 }
