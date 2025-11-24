@@ -12,6 +12,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include "group18_interfaces/srv/table_count.hpp"
 
 class NavigateToPoseClient : public rclcpp::Node
 {
@@ -50,6 +51,11 @@ private:
     void feedback_callback(GoalHandle::SharedPtr, const std::shared_ptr<const NavigateToPoseAction::Feedback> feedback);
     // to manage start of tables detection
     void result_callback(const GoalHandle::WrappedResult & result);
+
+    // service client for table detection
+    void start_table_counting_service();
+    rclcpp::Client<group18_interfaces::srv::TableCount>::SharedPtr table_client_;
+    void table_response_callback(rclcpp::Client<group18_interfaces::srv::TableCount>::SharedFuture future);
 };
 
 #endif // NAVIGATE_TO_POSE_CLIENT_

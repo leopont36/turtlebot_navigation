@@ -22,6 +22,9 @@ NavigateToPoseClient::NavigateToPoseClient() : Node("navigate_to_pose_client")
         10, 
         std::bind(&NavigateToPoseClient::initial_pose_callback, this, std::placeholders::_1));
 
+    // initialize client for table detection
+    table_client_ = this->create_client<group18_interfaces::srv::TableCount>("table_count");
+
 }
 
 void NavigateToPoseClient::initial_pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr /*msg*/)
@@ -134,7 +137,7 @@ void NavigateToPoseClient::result_callback(const GoalHandle::WrappedResult & res
         case rclcpp_action::ResultCode::SUCCEEDED:
             RCLCPP_INFO(this->get_logger(), "Goal reached! Calling table counter service...");
             // TO DO: call service for starting tables
-            // start_table_counting_service();
+            start_table_counting_service();
             break;
         case rclcpp_action::ResultCode::ABORTED:
             RCLCPP_ERROR(this->get_logger(), "Goal was aborted");
@@ -145,6 +148,34 @@ void NavigateToPoseClient::result_callback(const GoalHandle::WrappedResult & res
         default:
             RCLCPP_ERROR(this->get_logger(), "Unknown result code");
             break;
+    }
+}
+
+void NavigateToPoseClient::start_table_counting_service()
+{
+    // check if service is ready
+    if (!table_client_->wait_for_service(std::chrono::seconds(1))) {
+        RCLCPP_ERROR(this->get_logger(), "Table counting service not available!");
+        return;
+    }
+
+    auto request = std::make_shared<group18_interfaces::srv::TableCount::Request>();
+
+    RCLCPP_INFO(this->get_logger(), "Calling Table Counter Service...");
+
+    // send asynchronously
+    table_client_->async_send_request(request, 
+        std::bind(&NavigateToPoseClient::table_response_callback, this, std::placeholders::_1));
+}
+
+void NavigateToPoseClient::table_response_callback(rclcpp::Client<group18_interfaces::srv::TableCount>::SharedFuture future)
+{
+    try {
+        auto response = future.get();
+        RCLCPP_INFO(this->get_logger(), "Service Success! Number of tables detected: %ld", response->n_tables);
+    } 
+    catch (const std::exception &e) {
+        RCLCPP_ERROR(this->get_logger(), "Service call failed: %s", e.what());
     }
 }
 
