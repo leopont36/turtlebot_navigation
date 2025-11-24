@@ -15,6 +15,24 @@ NavigateToPoseClient::NavigateToPoseClient() : Node("navigate_to_pose_client")
     // timer to loop every 1 second to check if the tags are visible
     timer_ = this->create_wall_timer(
         1000ms, std::bind(&NavigateToPoseClient::timer_callback, this));
+    
+    // subscription to check if initial pose has been published
+    initial_pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+        "/initialpose", 
+        10, 
+        std::bind(&NavigateToPoseClient::initial_pose_callback, this, std::placeholders::_1));
+
+}
+
+void NavigateToPoseClient::initial_pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr /*msg*/)
+{   
+
+    if (!initial_pose_received_) {
+        RCLCPP_INFO(this->get_logger(), "Initial Pose received! System is ready.");
+        initial_pose_received_ = true;
+        // unsubscribe now to save resources
+        initial_pose_sub_.reset(); 
+    }
 }
 
 void NavigateToPoseClient::timer_callback()
@@ -22,6 +40,13 @@ void NavigateToPoseClient::timer_callback()
     // if goal is sent, return
     if (goal_sent_) {
         timer_->cancel();
+        return;
+    }
+
+    // wait that the initial pose is published
+    if (!initial_pose_received_) {
+        RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 2000, 
+            "Waiting for Initial Pose to be published...");
         return;
     }
 
@@ -81,18 +106,46 @@ void NavigateToPoseClient::send_goal()
     
     action_client_->wait_for_action_server();
     
+    // to manage feedbacks / result
     auto send_goal_options = rclcpp_action::Client<NavigateToPoseAction>::SendGoalOptions();
+
+    // for updates while moving (not used)
     send_goal_options.feedback_callback = 
         std::bind(&NavigateToPoseClient::feedback_callback, this, 
                     std::placeholders::_1, std::placeholders::_2);
     
+    // result callback to manage start of table detection node
+    send_goal_options.result_callback = 
+        std::bind(&NavigateToPoseClient::result_callback, this, std::placeholders::_1);
+    
+    RCLCPP_INFO(this->get_logger(), "Sending Goal...");
     action_client_->async_send_goal(goal_msg, send_goal_options);
 }
 
 void NavigateToPoseClient::feedback_callback(GoalHandle::SharedPtr, 
                             const std::shared_ptr<const NavigateToPoseAction::Feedback> feedback)
 {
-    RCLCPP_INFO(this->get_logger(), "Received feedback");
+    // RCLCPP_INFO(this->get_logger(), "Received feedback");
+}
+
+void NavigateToPoseClient::result_callback(const GoalHandle::WrappedResult & result)
+{
+    switch (result.code) {
+        case rclcpp_action::ResultCode::SUCCEEDED:
+            RCLCPP_INFO(this->get_logger(), "Goal reached! Calling table counter service...");
+            // TO DO: call service for starting tables
+            // start_table_counting_service();
+            break;
+        case rclcpp_action::ResultCode::ABORTED:
+            RCLCPP_ERROR(this->get_logger(), "Goal was aborted");
+            break;
+        case rclcpp_action::ResultCode::CANCELED:
+            RCLCPP_ERROR(this->get_logger(), "Goal was canceled");
+            break;
+        default:
+            RCLCPP_ERROR(this->get_logger(), "Unknown result code");
+            break;
+    }
 }
 
 int main(int argc, char** argv)
