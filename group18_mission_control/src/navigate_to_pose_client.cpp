@@ -50,7 +50,7 @@ void NavigateToPoseClient::timer_callback()
         return;
     }
 
-    // try to compute goal's position
+    // try to compute goal's position, if it succeeds send goal
     if (calculate_goal_pose()) {
         send_goal();
         goal_sent_ = true;
@@ -64,7 +64,7 @@ bool NavigateToPoseClient::calculate_goal_pose()
     geometry_msgs::msg::TransformStamped ts_apriltag2;
 
     try {
-        // check if transforms exist before looking them up
+        // check if transforms exist before looking them up, if not return false
         if (!tf_buffer_->canTransform("map", "tag36h11:1", tf2::TimePointZero) ||
             !tf_buffer_->canTransform("map", "tag36h11:10", tf2::TimePointZero)) {
             RCLCPP_INFO(this->get_logger(), "Waiting for AprilTags to be detected...");
