@@ -44,25 +44,29 @@ void LifecycleManager::startupSequence()
 
 /**
  * @brief Function to send startup to the lifecycle service
- * * @param client The shared pointer to a service client
- * @return True if the transition to 'active' state was successful. Talse otherwise.
+ * * @param client The shared pointer of a service client
+ * @return True if the transition to 'active' state was successful. False otherwise.
  */
 bool LifecycleManager::callStartup(rclcpp::Client<nav2_msgs::srv::ManageLifecycleNodes>::SharedPtr client)
 {
   RCLCPP_INFO(get_logger(), "Waiting for service...");
 
+  // Wait 10 seconds for the lifecycle manager service to become active
   if (!client->wait_for_service(10s))
   {
     RCLCPP_ERROR(get_logger(), "Service not available");
     return false;
   }
 
+  // Construct the service request
   auto request = std::make_shared<nav2_msgs::srv::ManageLifecycleNodes::Request>();
   request->command = nav2_msgs::srv::ManageLifecycleNodes::Request::STARTUP;
 
+  // Send request asynchronously
   RCLCPP_INFO(get_logger(), "Sending STARTUP...");
   auto future = client->async_send_request(request);
 
+  // Wait 30 seconds to complete the transition
   auto status = future.wait_for(30s);
   if (status != std::future_status::ready)
   {
@@ -70,6 +74,7 @@ bool LifecycleManager::callStartup(rclcpp::Client<nav2_msgs::srv::ManageLifecycl
     return false;
   }
 
+  // Analize the response
   auto response = future.get();
   if (response->success)
   {
