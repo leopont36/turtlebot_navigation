@@ -18,6 +18,8 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(rclcpp_action REQUIRED)
 
+find_package(group18_interfaces REQUIRED)
+
 add_executable(navigate_to_pose_client
   src/navigate_to_pose_client.cpp
 )
@@ -30,6 +32,7 @@ ament_target_dependencies(navigate_to_pose_client
   tf2
   tf2_ros
   tf2_geometry_msgs
+  group18_interfaces
 )
 
 target_include_directories(navigate_to_pose_client PUBLIC
