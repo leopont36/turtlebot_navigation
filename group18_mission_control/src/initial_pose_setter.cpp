@@ -4,15 +4,26 @@
  * @brief Constructor for the InitialPoseSetter node.
  * Initializes initial pose setter, odom subscribers.
  */
-InitialPoseSetter::InitialPoseSetter() : Node("initial_pose_setter"), setted_(false)
+InitialPoseSetter::InitialPoseSetter() : Node("initial_pose_setter"), amcl_on_(false), published_(false)
 {
   // Create subscriber to odometry
   odom_sub_ = create_subscription<nav_msgs::msg::Odometry>("/odom", 10, std::bind(&InitialPoseSetter::odom_callback, this, std::placeholders::_1));
 
-  // Create client for set_initial_pose service
-  initial_pose_client_ = create_client<nav2_msgs::srv::SetInitialPose>("/set_initial_pose");
+  tr_event_sub_ = create_subscription<lifecycle_msgs::msg::TransitionEvent>( "/amcl/transition_event", 10, std::bind(&InitialPoseSetter::event_callback, this, std::placeholders::_1));
+
+  // Create publisher for the initial pose
+  initial_pose_pub_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 10);
 
   RCLCPP_INFO(this->get_logger(), "InitialPoseSetter node has been started.");
+}
+
+void InitialPoseSetter::event_callback(const lifecycle_msgs::msg::TransitionEvent::SharedPtr msg)
+{
+  if (msg->goal_state.id == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    RCLCPP_INFO(this->get_logger(), "AMCL ready to get initial pose");
+    amcl_on_ = true;
+  }
 }
 
 /**
@@ -23,23 +34,21 @@ InitialPoseSetter::InitialPoseSetter() : Node("initial_pose_setter"), setted_(fa
  */
 void InitialPoseSetter::odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
-  if (!initial_pose_client_ ->service_is_ready()|| setted_)
+  if (!amcl_on_ || published_)
     return;
 
-  RCLCPP_INFO(this->get_logger(), "AMCL ready to get initial pose");
+  RCLCPP_INFO(this->get_logger(), "getting initial pose from /odom");
 
-  auto request = std::make_shared<nav2_msgs::srv::SetInitialPose::Request>();
-  request->pose.header.stamp = this->now();
-  request->pose.header.frame_id = "map";
-  request->pose.pose = msg->pose;
+  geometry_msgs::msg::PoseWithCovarianceStamped initial_pose;
+  initial_pose.header.stamp = this->now();
+  initial_pose.header.frame_id = "map";
+  initial_pose.pose = msg->pose;
 
-  auto future = initial_pose_client_->async_send_request(request,
-    [this](rclcpp::Client<nav2_msgs::srv::SetInitialPose>::SharedFuture future) {
-      (void) future;
-      RCLCPP_INFO(this->get_logger(), "Initial pose setted in AMCL");
-      setted_ = true;
-  });
+  initial_pose_pub_->publish(initial_pose);
 
+  RCLCPP_INFO(this->get_logger(), "Initial pose published");
+
+  published_ = true;
 }
 
 int main(int argc, char** argv)

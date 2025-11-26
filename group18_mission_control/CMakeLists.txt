@@ -71,7 +71,8 @@ target_include_directories(initial_pose_setter PUBLIC
 ament_target_dependencies(initial_pose_setter
   rclcpp
   nav_msgs
-  nav2_msgs
+  geometry_msgs
+  lifecycle_msgs
 )
 
 install(TARGETS
