@@ -28,7 +28,7 @@ private:
     // final position to reach
     geometry_msgs::msg::PoseStamped goal_pose; 
     // to make sure the goal is sent
-    bool goal_sent_ = false; 
+    bool goal_sent_; 
 
     // to repeatily check if apriltag's positions and initial position are published
     void timer_callback();
@@ -39,11 +39,12 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
 
     // to track if initial pose is published
-    bool initial_pose_received_ = false; 
+    bool initial_pose_received_; 
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_sub_;
     void initial_pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
 
     // to initialize goal_pose to position between apriltags
+    bool goal_calculated_;
     bool calculate_goal_pose(); 
 
 

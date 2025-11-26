@@ -12,9 +12,6 @@ NavigateToPoseClient::NavigateToPoseClient() : Node("navigate_to_pose_client")
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-    // timer to loop every 1 second to check if the tags are visible
-    timer_ = this->create_wall_timer(
-        1000ms, std::bind(&NavigateToPoseClient::timer_callback, this));
     
     // subscription to check if initial pose has been published
     initial_pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
@@ -24,6 +21,14 @@ NavigateToPoseClient::NavigateToPoseClient() : Node("navigate_to_pose_client")
 
     // initialize client for table detection
     table_client_ = this->create_client<group18_interfaces::srv::TableCount>("table_count");
+
+    goal_sent_ = false;
+    initial_pose_received_ = false; 
+    goal_calculated_ = false;
+
+    // timer to loop every 1 second to try computing apriltags and send goal pose
+    timer_ = this->create_wall_timer(
+        1000ms, std::bind(&NavigateToPoseClient::timer_callback, this));
 
 }
 
@@ -54,10 +59,12 @@ void NavigateToPoseClient::timer_callback()
     }
 
     // try to compute goal's position, if it succeeds send goal
-    if (calculate_goal_pose()) {
-        send_goal();
-        goal_sent_ = true;
+    if (!goal_calculated_) {
+        goal_calculated_ = calculate_goal_pose();
+        return;
     }
+    
+    send_goal();
 }
 
 bool NavigateToPoseClient::calculate_goal_pose()
@@ -76,6 +83,10 @@ bool NavigateToPoseClient::calculate_goal_pose()
         // transforms exist, get apriltag's transforms w.r.t. map frame
         ts_apriltag1 = tf_buffer_->lookupTransform("map", "tag36h11:1", tf2::TimePointZero);
         ts_apriltag2 = tf_buffer_->lookupTransform("map", "tag36h11:10", tf2::TimePointZero);
+
+        RCLCPP_INFO(this->get_logger(), "Apriltags detected at positions: [%.2f, %.2f] and [%.2f, %.2f]", 
+            ts_apriltag1.transform.translation.x, ts_apriltag1.transform.translation.y,
+            ts_apriltag2.transform.translation.x, ts_apriltag2.transform.translation.y);
     } 
     catch (const tf2::TransformException & ex) {
         RCLCPP_WARN(this->get_logger(), "TF Exception: %s", ex.what());
@@ -96,7 +107,7 @@ bool NavigateToPoseClient::calculate_goal_pose()
     // set goal pose as middle pose
     this->goal_pose = middle_pose;
     
-    RCLCPP_INFO(this->get_logger(), "Goal calculated: [%.2f, %.2f]", 
+    RCLCPP_INFO(this->get_logger(), "Goal calculated (position between apriltags): [%.2f, %.2f]", 
         middle_pose.pose.position.x, middle_pose.pose.position.y);
 
     return true;
@@ -121,7 +132,19 @@ void NavigateToPoseClient::send_goal()
     send_goal_options.result_callback = 
         std::bind(&NavigateToPoseClient::result_callback, this, std::placeholders::_1);
     
-    RCLCPP_INFO(this->get_logger(), "Sending Goal...");
+    send_goal_options.goal_response_callback = 
+        [this](const GoalHandle::SharedPtr & goal_handle) {
+            
+            if (goal_handle) {
+                RCLCPP_INFO(this->get_logger(), "Nav goal sent.");
+                goal_sent_ = true; // to cancel timer_callback
+            } 
+            else {
+                // REJECTED!
+                RCLCPP_WARN(this->get_logger(), "Nav goal rejected.");
+            }
+        };
+    
     action_client_->async_send_goal(goal_msg, send_goal_options);
 }
 
