@@ -59,25 +59,24 @@ ament_target_dependencies(lifecycle_manager
   nav2_msgs
 )
 
-add_executable(initial_pose_publisher 
-  src/initial_pose_publisher.cpp
+add_executable(initial_pose_setter 
+  src/initial_pose_setter.cpp
 )
 
-target_include_directories(initial_pose_publisher PUBLIC
+target_include_directories(initial_pose_setter PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
 
-ament_target_dependencies(initial_pose_publisher
+ament_target_dependencies(initial_pose_setter
   rclcpp
   nav_msgs
-  geometry_msgs
-  lifecycle_msgs
+  nav2_msgs
 )
 
 install(TARGETS
   lifecycle_manager
-  initial_pose_publisher
+  initial_pose_setter
   DESTINATION lib/${PROJECT_NAME}
 )
 

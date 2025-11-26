@@ -33,8 +33,10 @@ launch:
       name: apriltag
       namespace: apriltag
       remap:
+        # Remap the RGB camera with the topic /rgb_camera/image
       - from: /apriltag/image_rect
         to: /rgb_camera/image
+        # Remap the RGB camera info with the topic /rgb_camera/camera_info
       - from: /camera/camera_info
         to: /rgb_camera/camera_info 
 
