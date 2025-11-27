@@ -27,10 +27,10 @@ def generate_launch_description():
         output='screen'
     )
     
-    initial_pose_publisher = Node(
+    initial_pose_setter = Node(
         package='group18_mission_control',
-        executable='initial_pose_publisher',
-        name='initial_pose_publisher',
+        executable='initial_pose_setter',
+        name='initial_pose_setter',
         output='screen'
     )
 
@@ -50,11 +50,11 @@ def generate_launch_description():
         ),
         TimerAction(
             period=6.0,
-            actions=[initial_pose_publisher]
+            actions=[initial_pose_setter]
         ),
         apriltag_launch,
         TimerAction(
-            period=10.0,
+            period=5.0,
             actions=[navigate_client_node]
         )
     ])  
