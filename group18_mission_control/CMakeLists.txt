@@ -17,6 +17,8 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(visualization_msgs)
 
 find_package(group18_interfaces REQUIRED)
 
@@ -43,6 +45,33 @@ target_include_directories(navigate_to_pose_client PUBLIC
 install(TARGETS
   navigate_to_pose_client
   DESTINATION lib/${PROJECT_NAME}
+)
+
+add_executable(tables_detection
+  src/tables_detection.cpp 
+  src/circle.cpp
+)
+
+target_include_directories(tables_detection PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+ament_target_dependencies(tables_detection
+  rclcpp
+  sensor_msgs
+  geometry_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  group18_interfaces
+)
+
+install(TARGETS tables_detection
+  DESTINATION lib/${PROJECT_NAME})
+
+install(DIRECTORY include/
+  DESTINATION include
 )
 
 add_executable(lifecycle_manager 
