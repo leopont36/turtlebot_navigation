@@ -49,7 +49,7 @@ def generate_launch_description():
             actions=[lifecycle_manager_node]
         ),
         TimerAction(
-            period=6.0,
+            period=5.0,
             actions=[initial_pose_setter]
         ),
         apriltag_launch,
