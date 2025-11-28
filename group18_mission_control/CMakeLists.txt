@@ -12,6 +12,7 @@ find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -75,9 +76,26 @@ ament_target_dependencies(initial_pose_setter
   lifecycle_msgs
 )
 
+add_executable(corridor_navigator src/corridor_navigator.cpp)
+
+target_include_directories(corridor_navigator PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+ament_target_dependencies(corridor_navigator 
+  rclcpp 
+  sensor_msgs
+  nav_msgs
+  nav2_msgs
+  geometry_msgs
+  rclcpp_action
+)
+
 install(TARGETS
   lifecycle_manager
   initial_pose_setter
+  corridor_navigator
   DESTINATION lib/${PROJECT_NAME}
 )
 

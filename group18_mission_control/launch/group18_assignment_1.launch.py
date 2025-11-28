@@ -42,10 +42,17 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}] 
     )
 
+    corridor_navigator_node = Node(
+        package='group18_mission_control',
+        executable='corridor_navigator',
+        name='corridor_navigation_node',
+        output='screen',
+    )
+
     return LaunchDescription([
         assignment_launch,
         TimerAction(
-            period=5.0,
+            period=8.0,
             actions=[lifecycle_manager_node]
         ),
         TimerAction(
@@ -54,7 +61,11 @@ def generate_launch_description():
         ),
         apriltag_launch,
         TimerAction(
-            period=5.0,
+            period=6.0,
             actions=[navigate_client_node]
+        ),
+        TimerAction(
+            period=7.0,
+            actions=[corridor_navigator_node]
         )
     ])  
