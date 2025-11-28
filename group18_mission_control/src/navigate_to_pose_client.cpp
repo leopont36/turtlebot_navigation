@@ -44,7 +44,7 @@ void NavigateToPoseClient::initial_pose_callback(const geometry_msgs::msg::PoseW
         RCLCPP_INFO(this->get_logger(), "Initial Pose received! System is ready.");
         initial_pose_received_ = true;
         // unsubscribe now to save resources
-        initial_pose_sub_.reset(); 
+        //initial_pose_sub_.reset(); 
     }
 }
 
@@ -197,6 +197,10 @@ void NavigateToPoseClient::result_callback(const GoalHandle::WrappedResult & res
             break;
         case rclcpp_action::ResultCode::CANCELED:
             RCLCPP_ERROR(this->get_logger(), "Goal was canceled");
+            goal_sent_ = false;
+            initial_pose_received_ = false;
+            if (timer_->is_canceled())
+                timer_->reset();
             break;
         default:
             RCLCPP_ERROR(this->get_logger(), "Unknown result code");
