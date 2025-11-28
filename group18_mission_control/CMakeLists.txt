@@ -48,8 +48,7 @@ install(TARGETS
 )
 
 add_executable(tables_detection
-  src/tables_detection.cpp 
-  src/circle.cpp
+  src/tables_detection.cpp
 )
 
 target_include_directories(tables_detection PUBLIC
