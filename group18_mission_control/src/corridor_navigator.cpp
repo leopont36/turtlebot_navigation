@@ -21,7 +21,7 @@ void CorridorNavigator::scanCallback(const sensor_msgs::msg::LaserScan::SharedPt
   for (size_t i = 0; i < msg->ranges.size(); i++)
   {
     float range = msg->ranges[i];
-    //extract only points at least 1.5m from the robot
+    //extract only points least then 1.5m from the robot
     if (range > msg->range_min && range < 1.5)    
     { 
       float x = range * cos(angle);               
@@ -67,13 +67,13 @@ void CorridorNavigator::scanCallback(const sensor_msgs::msg::LaserScan::SharedPt
 
   //compute angolar speed to send to /cmd_vel
   float corridor_angle = (left_slope + right_slope) / 2.0;
+
   geometry_msgs::msg::Twist cmd_msg;
   cmd_msg.linear.x = 1;
   cmd_msg.angular.z =  corridor_angle; 
-  //cmd_msg.angular.z = std::clamp(-1.5f * corridor_angle - 0.3f * lateral_offset, -0.5f, 0.5f);
+
   vel_pub_->publish(cmd_msg);
   
-
   RCLCPP_INFO(this->get_logger(), "Sending vel_cmd: v = %.2f, w = %.10f",cmd_msg.linear.x, cmd_msg.angular.z);
 }
 

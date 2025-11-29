@@ -1,15 +1,11 @@
 #include "group18_mission_control/initial_pose_setter.hpp"
 
-/**
- * @brief Constructor for the InitialPoseSetter node.
- * Initializes initial pose setter, odom subscribers.
- */
 InitialPoseSetter::InitialPoseSetter() : Node("initial_pose_setter"), amcl_on_(false), published_(false)
 {
   // Create subscriber to odometry
-  odom_sub_ = create_subscription<nav_msgs::msg::Odometry>("/odom", 10, std::bind(&InitialPoseSetter::odom_callback, this, std::placeholders::_1));
+  odom_sub_ = create_subscription<nav_msgs::msg::Odometry>("/odom", 10, std::bind(&InitialPoseSetter::odomCallback, this, std::placeholders::_1));
 
-  tr_event_sub_ = create_subscription<lifecycle_msgs::msg::TransitionEvent>( "/amcl/transition_event", 10, std::bind(&InitialPoseSetter::event_callback, this, std::placeholders::_1));
+  tr_event_sub_ = create_subscription<lifecycle_msgs::msg::TransitionEvent>( "/amcl/transition_event", 10, std::bind(&InitialPoseSetter::eventCallback, this, std::placeholders::_1));
 
   // Create publisher for the initial pose
   initial_pose_pub_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 10);
@@ -17,7 +13,7 @@ InitialPoseSetter::InitialPoseSetter() : Node("initial_pose_setter"), amcl_on_(f
   RCLCPP_INFO(this->get_logger(), "InitialPoseSetter node has been started.");
 }
 
-void InitialPoseSetter::event_callback(const lifecycle_msgs::msg::TransitionEvent::SharedPtr msg)
+void InitialPoseSetter::eventCallback(const lifecycle_msgs::msg::TransitionEvent::SharedPtr msg)
 {
   if (msg->goal_state.id == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
   {
@@ -26,18 +22,12 @@ void InitialPoseSetter::event_callback(const lifecycle_msgs::msg::TransitionEven
   }
 }
 
-/**
- * @brief Callback function for odometry messages.
- * This method stores the robot's position and orientation as the initial pose.
- * The initial pose is only updated until it has been published.
- * @param msg Odometry message containing pose and covariance of the robot
- */
-void InitialPoseSetter::odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
+void InitialPoseSetter::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
   if (!amcl_on_ || published_)
     return;
 
-  RCLCPP_INFO(this->get_logger(), "getting initial pose from /odom");
+  RCLCPP_INFO(this->get_logger(), "Getting initial pose from /odom");
 
   geometry_msgs::msg::PoseWithCovarianceStamped initial_pose;
   initial_pose.header.stamp = this->now();
@@ -46,7 +36,7 @@ void InitialPoseSetter::odom_callback(const nav_msgs::msg::Odometry::SharedPtr m
 
   initial_pose_pub_->publish(initial_pose);
 
-  RCLCPP_INFO(this->get_logger(), "Initial pose published");
+  RCLCPP_INFO(this->get_logger(), "Initial pose published to /initialpose");
 
   published_ = true;
 }
