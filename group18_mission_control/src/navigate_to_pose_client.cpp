@@ -2,11 +2,7 @@
 
 using namespace std::chrono_literals;
 
-/**
- * @brief Constructor for the NavigateToPoseClient node.
- * * Initializes the action client for navigation, sets up the TF2 buffer and listener
- *  and starts a timer to check every second for AprilTag visibility.
- */
+
 NavigateToPoseClient::NavigateToPoseClient() : Node("navigate_to_pose_client")
 {
     // Create Action Client
@@ -43,16 +39,9 @@ void NavigateToPoseClient::initial_pose_callback(const geometry_msgs::msg::PoseW
     if (!initial_pose_received_) {
         RCLCPP_INFO(this->get_logger(), "Initial Pose received! System is ready.");
         initial_pose_received_ = true;
-        // unsubscribe now to save resources
-        //initial_pose_sub_.reset(); 
     }
 }
 
-/**
- * @brief Periodic callback function.
- * * Checks if the navigation goal has already been sent. If not, it attempts to calculate
- * the goal pose. Once the goal is successfully calculated and sent, the timer is cancelled.
- */
 void NavigateToPoseClient::timer_callback()
 {
     // If goal is sent, return
@@ -77,12 +66,6 @@ void NavigateToPoseClient::timer_callback()
     send_goal();
 }
 
-/**
- * @brief Calculates the navigation goal pose based on the AprilTag position.
- * * This function looks up the transforms for 'tag36h11:1' and 'tag36h11:10' in the 'map' frame.
- * It compute the mid point between these two tags and use it as a final destination.
- * * @return True if both tags are detected and the goal is calculated. False otherwise.
- */
 bool NavigateToPoseClient::calculate_goal_pose()
 {
     // Variable to store transforms for the AprilTags
@@ -133,10 +116,6 @@ bool NavigateToPoseClient::calculate_goal_pose()
     return true;
 }
 
-/**
- * @brief Send the calculated pose(middle pose) to the Action Server.
- * * Configure the goal option and sends the request asynchronously.
- */
 void NavigateToPoseClient::send_goal()
 {
     auto goal_msg = NavigateToPoseAction::Goal();
@@ -173,11 +152,7 @@ void NavigateToPoseClient::send_goal()
     action_client_->async_send_goal(goal_msg, send_goal_options);
 }
 
-/**
- * @brief Callback function to handle the feedback from the Action Server.
- * * @param Goalhandle The goal handle.
- * @param feedback The feedback message that contains the current navigation status.
- */
+
 void NavigateToPoseClient::feedback_callback(GoalHandle::SharedPtr, 
                             const std::shared_ptr<const NavigateToPoseAction::Feedback> feedback)
 {

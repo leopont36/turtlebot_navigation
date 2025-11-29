@@ -18,7 +18,6 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(rclcpp_action REQUIRED)
-find_package(sensor_msgs REQUIRED)
 find_package(visualization_msgs)
 
 find_package(group18_interfaces REQUIRED)
