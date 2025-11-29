@@ -126,11 +126,6 @@ void NavigateToPoseClient::send_goal()
 
     // Define the options for the goal
     auto send_goal_options = rclcpp_action::Client<NavigateToPoseAction>::SendGoalOptions();
-
-    // for updates while moving (not used)
-    send_goal_options.feedback_callback = 
-        std::bind(&NavigateToPoseClient::feedback_callback, this, 
-                    std::placeholders::_1, std::placeholders::_2);
     
     // result callback to manage start of table detection node
     send_goal_options.result_callback = 
@@ -150,13 +145,6 @@ void NavigateToPoseClient::send_goal()
         };
     
     action_client_->async_send_goal(goal_msg, send_goal_options);
-}
-
-
-void NavigateToPoseClient::feedback_callback(GoalHandle::SharedPtr, 
-                            const std::shared_ptr<const NavigateToPoseAction::Feedback> feedback)
-{
-    // RCLCPP_INFO(this->get_logger(), "Received feedback");
 }
 
 void NavigateToPoseClient::result_callback(const GoalHandle::WrappedResult & result)
