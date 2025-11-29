@@ -29,7 +29,7 @@ struct DetectedObject {
 /**
  * @brief Node responsible for detecting circular tables from LaserScan data.
  * * It buffers incoming scans and, upon service request, processes the buffer 
- * to detect, filter, and count table legs based on geometric constraints.
+ * to detect, filter, and count tables based on geometric constraints.
  */
 class TablesDetection : public rclcpp::Node
 {
@@ -44,7 +44,7 @@ private:
     // If adjacent points are further apart than this, a new cluster begins.
     const double SEGMENT_JUMP = 0.10; 
 
-    // Geometric constraints for valid table legs (radius in meters).
+    // Geometric constraints for valid tables (radius in meters).
     const double TABLE_RADIUS_MIN = 0.02;
     const double TABLE_RADIUS_MAX = 0.20; 
     
@@ -54,7 +54,7 @@ private:
     // Maximum distance (in meters) to consider two detections as the same object.
     const double MERGE_TOLERANCE = 0.30; 
     
-    // Minimum number of detections across the buffer required to confirm a table exists.
+    // Minimum number of detections across the buffer required to confirm a table exists (out of 15 scans).
     const int MIN_VOTES = 5; 
 
     // Buffer to store recent laser scans for temporal averaging/filtering.
@@ -99,8 +99,8 @@ private:
     bool fit_circle_geometry(const std::vector<std::pair<double, double>>& points, double& out_x, double& out_y);
 
     /**
-     * @brief Evaluates a cluster of points to see if it represents a table leg.
-     * Performs convexity checks, width checks, and calls circle fitting.
+     * @brief Evaluates a cluster of points to see if it represents a table.
+     * Performs convexity checks and calls circle fitting.
      * @param points Input points in the cluster.
      * @param objects Reference to the list of valid detected objects.
      * @param tf Transform to convert the detected point to the target frame (e.g., Odom or Map).
