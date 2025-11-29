@@ -8,10 +8,10 @@
 2. Compile the packages:
   ```bash
   cd ..
-  colcon build
+  colcon build --packages-select group18_mission_control group18_interfaces
   ```
 3. Run launch file:
   ```bash
   source install/setup.bash
-  ros2 launch ir_launch assignment_1.launch.py
+  ros2 launch group18_mission_control group18_assignment_1.launch.py
   ```
