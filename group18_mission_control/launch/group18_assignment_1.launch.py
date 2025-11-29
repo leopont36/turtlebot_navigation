@@ -11,7 +11,7 @@ def generate_launch_description():
     ir_launch_dir = get_package_share_directory('ir_launch')
     ir_launch_file = os.path.join(ir_launch_dir, 'launch', 'assignment_1.launch.py')
 
-    apriltag_pkg = get_package_share_directory('group18_apriltag_ros')
+    apriltag_pkg = get_package_share_directory('group18_mission_control')
     apriltag_file = os.path.join(apriltag_pkg, 'launch', 'camera_36h11.launch.yml')
 
     assignment_launch = IncludeLaunchDescription(PythonLaunchDescriptionSource(ir_launch_file))
