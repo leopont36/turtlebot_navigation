@@ -1,11 +1,6 @@
 #include "group18_mission_control/lifecycle_manager.hpp"
 using namespace std::chrono_literals;
 
-/**
- * @brief Constructor for the LifecycleManager node.
- * * Initializes the Service Clients for the Nav2 localization and navigation.
- * It also create a thread to handle the startup sequence
- */
 LifecycleManager::LifecycleManager() : Node("lifecycle_manager_client")
 {
   client_localization_ = create_client<nav2_msgs::srv::ManageLifecycleNodes>("/lifecycle_manager_localization/manage_nodes");
@@ -14,10 +9,6 @@ LifecycleManager::LifecycleManager() : Node("lifecycle_manager_client")
   startup_thread_.detach();
 }
 
-/**
- * @brief Initialize the startup stack for the navigation
- * * The localization start before the navigation is attempted.
- */
 void LifecycleManager::startupSequence()
 {
   
@@ -42,11 +33,7 @@ void LifecycleManager::startupSequence()
   RCLCPP_INFO(get_logger(), "Nav2 stack started successfully!");
 }
 
-/**
- * @brief Function to send startup to the lifecycle service
- * * @param client The shared pointer of a service client
- * @return True if the transition to 'active' state was successful. False otherwise.
- */
+
 bool LifecycleManager::callStartup(rclcpp::Client<nav2_msgs::srv::ManageLifecycleNodes>::SharedPtr client)
 {
   RCLCPP_INFO(get_logger(), "Waiting for service...");

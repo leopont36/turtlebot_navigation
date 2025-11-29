@@ -27,10 +27,10 @@ def generate_launch_description():
         output='screen'
     )
     
-    initial_pose_publisher = Node(
+    initial_pose_setter = Node(
         package='group18_mission_control',
-        executable='initial_pose_publisher',
-        name='initial_pose_publisher',
+        executable='initial_pose_setter',
+        name='initial_pose_setter',
         output='screen'
     )
 
@@ -49,11 +49,22 @@ def generate_launch_description():
         #parameters=[{'use_sim_time': True}] 
     )
 
+    corridor_navigator_node = Node(
+        package='group18_mission_control',
+        executable='corridor_navigator',
+        name='corridor_navigation_node',
+        output='screen',
+    )
+
     return LaunchDescription([
         assignment_launch,
         TimerAction(
-            period=5.0,
+            period=8.0,
             actions=[lifecycle_manager_node]
+        ),
+        TimerAction(
+            period=5.0,
+            actions=[initial_pose_setter]
         ),
         TimerAction(
             period=5.0,
@@ -61,11 +72,11 @@ def generate_launch_description():
         ),
         apriltag_launch,
         TimerAction(
-            period=5.0,
+            period=6.0,
             actions=[navigate_client_node]
         ),
         TimerAction(
-            period=6.0,
-            actions=[initial_pose_publisher]
+            period=7.0,
+            actions=[corridor_navigator_node]
         )
     ])  
