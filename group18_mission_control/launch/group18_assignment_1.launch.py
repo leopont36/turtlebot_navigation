@@ -34,12 +34,19 @@ def generate_launch_description():
         output='screen'
     )
 
+    tables_detection_node = Node(
+        package='group18_mission_control',
+        executable='tables_detection',
+        name='tables_detection',
+        output='screen',
+    )
+
     navigate_client_node = Node(
         package='group18_mission_control',
         executable='navigate_to_pose_client',
         name='navigate_to_pose_client',
         output='screen',
-        parameters=[{'use_sim_time': True}] 
+        #parameters=[{'use_sim_time': True}] 
     )
 
     corridor_navigator_node = Node(
@@ -58,6 +65,10 @@ def generate_launch_description():
         TimerAction(
             period=5.0,
             actions=[initial_pose_setter]
+        ),
+        TimerAction(
+            period=5.0,
+            actions=[tables_detection_node]
         ),
         apriltag_launch,
         TimerAction(
