@@ -30,11 +30,7 @@ public:
 
 private:
     // threshold to split scan points into distinct clusters
-    const double SEGMENT_JUMP = 0.40; 
-    
-    // width filters to reject object too big/small to be tables
-    const double TABLE_MIN_WIDTH = 0.05; // 5cm
-    const double TABLE_MAX_WIDTH = 0.40; // 40cm
+    const double SEGMENT_JUMP = 0.10; 
 
     // circle geometry filters
     const double TABLE_RADIUS_MIN = 0.02;
@@ -42,8 +38,8 @@ private:
     const double CIRCLE_FIT_MSE_THRESH = 0.03; // Max mean squared error for curve fit
 
     // to detect consistency between scans
-    const double MERGE_TOLERANCE = 0.60; // Max dist to merge detections between frames
-    const int MIN_VOTES = 2; // How many frames must see a table to confirm it
+    const double MERGE_TOLERANCE = 0.30; // Max dist to merge detections between frames
+    const int MIN_VOTES = 5; // How many frames must see a table to confirm it
     
 
     std::deque<sensor_msgs::msg::LaserScan::SharedPtr> scan_buffer_;

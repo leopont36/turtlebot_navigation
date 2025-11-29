@@ -34,10 +34,12 @@ void TablesDetection::service_callback(const std::shared_ptr<group18_interfaces:
     std::vector<DetectedObject> all_detections;
 
     for (const sensor_msgs::msg::LaserScan::SharedPtr& scan : scan_buffer_) {
+        // These objects will be returned in the MAP frame (stable)
         std::vector<DetectedObject> objects = find_objects_in_scan(scan);
         all_detections.insert(all_detections.end(), objects.begin(), objects.end());
     }
 
+    // filters map-frame objects, then converts to odom for publishing
     int final_count = filter_and_count(all_detections);
     response->n_tables = final_count;
     RCLCPP_INFO(this->get_logger(), "Counted %d tables.", final_count);
@@ -49,7 +51,8 @@ std::vector<DetectedObject> TablesDetection::find_objects_in_scan(const sensor_m
     geometry_msgs::msg::TransformStamped tf;
     
     try {
-        tf = tf_buffer_->lookupTransform("odom", scan->header.frame_id, tf2::TimePointZero);
+        // in map frame to reduce motion blur.
+        tf = tf_buffer_->lookupTransform("map", scan->header.frame_id, scan->header.stamp, rclcpp::Duration::from_seconds(0.1));
     } catch (tf2::TransformException &ex) {
         RCLCPP_WARN(this->get_logger(), "TF Error: %s", ex.what());
         return objects; 
@@ -57,12 +60,14 @@ std::vector<DetectedObject> TablesDetection::find_objects_in_scan(const sensor_m
 
     std::vector<std::pair<double, double>> cluster_points;
     double prev_r = scan->ranges[0];
+    // RCLCPP_INFO(this->get_logger(), "\n\n---- SCAN with %.2ld points ----\n\n", scan->ranges.size());
 
     for (size_t i = 0; i < scan->ranges.size(); ++i) {
         double r = scan->ranges[i];
         bool valid = (r > scan->range_min && r < scan->range_max);
         
         if (std::abs(r - prev_r) > SEGMENT_JUMP || !valid) {
+            // RCLCPP_INFO(this->get_logger(), "CLUSTER DETECTED with %.2ld points", cluster_points.size());
             process_cluster(cluster_points, objects, tf);
             cluster_points.clear();
         }
@@ -98,7 +103,10 @@ bool TablesDetection::fit_circle_geometry(const std::vector<std::pair<double, do
     double D = 2 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));
     
     // Check if points are collinear (a wall)
-    if (std::abs(D) < 0.001) return false; 
+    if (std::abs(D) < 0.001)  {
+        // RCLCPP_INFO(this->get_logger(), "Not a circle, likely a wall");
+        return false;
+    } 
 
     // Calculate Circumcenter
     double center_x = ((x1*x1 + y1*y1)*(y2 - y3) + (x2*x2 + y2*y2)*(y3 - y1) + (x3*x3 + y3*y3)*(y1 - y2)) / D;
@@ -107,7 +115,10 @@ bool TablesDetection::fit_circle_geometry(const std::vector<std::pair<double, do
     double radius = std::hypot(center_x - x1, center_y - y1);
 
     // Filter by radius size
-    if (radius < TABLE_RADIUS_MIN || radius > TABLE_RADIUS_MAX) return false;
+    if (radius < TABLE_RADIUS_MIN || radius > TABLE_RADIUS_MAX) {
+        // RCLCPP_INFO(this->get_logger(), "Radius out of bounds");
+        return false;
+    }
 
     // Filter by MSE (how well other points fit this circle)
     double total_error_sq = 0.0;
@@ -118,11 +129,15 @@ bool TablesDetection::fit_circle_geometry(const std::vector<std::pair<double, do
     }
     double mse = std::sqrt(total_error_sq / n);
 
-    if (mse > CIRCLE_FIT_MSE_THRESH) return false;
+    if (mse > CIRCLE_FIT_MSE_THRESH) {
+        // RCLCPP_INFO(this->get_logger(), "CIRCLE_FIT_MSE_THRESH not respected");
+        return false;
+    }
 
     // Success: Output the calculated center
     out_x = center_x;
     out_y = center_y;
+    // RCLCPP_INFO(this->get_logger(), "!!!!WE HAVE A CIRCLE!!!!");
     return true;
 }
 
@@ -133,45 +148,25 @@ void TablesDetection::process_cluster(const std::vector<std::pair<double, double
     size_t n = points.size();
     if (n < 3) return; // too few points to be anything useful
 
-    double dx = points.back().first - points.front().first;
-    double dy = points.back().second - points.front().second;
-    double width = std::hypot(dx, dy);
+    // convexiry check
+    double r_start = std::hypot(points.front().first, points.front().second);
+    double r_end   = std::hypot(points.back().first,  points.back().second);
+    double r_mid   = std::hypot(points[n/2].first,    points[n/2].second);
 
-    // 
-    if (width < TABLE_MIN_WIDTH || width > TABLE_MAX_WIDTH) return;
+    // check if middle point is closer to the robot
+    if (r_mid > r_start || r_mid > r_end) {
+        //  corner is concave, not a circle
+        return; 
+    }
 
     double final_x = 0.0;
     double final_y = 0.0;
 
-    // if few points, just check if points are non linear (not enough points to detect an actual shape)
-    if (n < 5) {
-        // check cross_product between points
-        auto& p_mid = points[n/2];
-        double cross_product = (p_mid.first - points.front().first) * dy - 
-                               (p_mid.second - points.front().second) * dx;
-                               
-        // if height is less than 2cm, it's a straight line
-        if (std::abs(cross_product) / width < 0.02) return;
-
-        // use centroid for position
-        double sum_x = 0, sum_y = 0;
-        for (const auto& p : points) { 
-            sum_x += p.first; 
-            sum_y += p.second;
-        }
-        final_x = sum_x / n;
-        final_y = sum_y / n;
-    }
-    // if many points, use geometric circle center
-    else {
-        // tries to fit a circle. If valid, final_x and final_y (circle centers) are updated.
-        // if invalid (e.g. it's a flat wall or a box), we return.
-        if (!fit_circle_geometry(points, final_x, final_y)) {
-            return; 
-        }
+    if (!fit_circle_geometry(points, final_x, final_y)) {
+        return; 
     }
 
-    // transform and store
+    // transform and store (map frame)
     geometry_msgs::msg::PointStamped p_in, p_out;
     p_in.point.x = final_x;
     p_in.point.y = final_y;
@@ -206,18 +201,40 @@ int TablesDetection::filter_and_count(const std::vector<DetectedObject>& candida
         }
     }
 
+    // prepare output in odom frame
     geometry_msgs::msg::PoseArray viz_msg;
     viz_msg.header.frame_id = "odom"; 
     viz_msg.header.stamp = this->now();
+
+    // get map -> odom (to convert back)
+    geometry_msgs::msg::TransformStamped map_to_odom;
+    bool can_transform = false;
+    try {
+        map_to_odom = tf_buffer_->lookupTransform("odom", "map", tf2::TimePointZero);
+        can_transform = true;
+    } catch (tf2::TransformException &ex) {
+        RCLCPP_WARN(this->get_logger(), "Cannot transform map->odom: %s", ex.what());
+    }
 
     int confirmed_count = 0;
     for (const Bin& bin : bins) {
         if (bin.votes >= MIN_VOTES) {
             confirmed_count++;
-            geometry_msgs::msg::Pose p;
-            p.position.x = bin.x;
-            p.position.y = bin.y;
-            viz_msg.poses.push_back(p);
+            
+            // create pose in map frame
+            geometry_msgs::msg::PoseStamped p_map;
+            p_map.pose.position.x = bin.x;
+            p_map.pose.position.y = bin.y;
+            
+            // transform to odom
+            if (can_transform) {
+                geometry_msgs::msg::PoseStamped p_odom;
+                tf2::doTransform(p_map, p_odom, map_to_odom);
+                viz_msg.poses.push_back(p_odom.pose);
+            } else {
+                // Fallback (shouldn't happen if TF is healthy)
+                viz_msg.poses.push_back(p_map.pose);
+            }
         }
     }
     viz_pub_->publish(viz_msg);
