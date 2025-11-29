@@ -26,6 +26,10 @@ add_executable(navigate_to_pose_client
   src/navigate_to_pose_client.cpp
 )
 
+install(DIRECTORY cfg/ 
+  DESTINATION share/${PROJECT_NAME}/cfg
+)
+
 ament_target_dependencies(navigate_to_pose_client
   rclcpp
   rclcpp_action
