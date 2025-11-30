@@ -30,6 +30,8 @@ void TablesDetection::service_callback(const std::shared_ptr<group18_interfaces:
         response->n_tables = 0;
         return;
     }
+    RCLCPP_INFO(this->get_logger(), "Service called. Processing %ld scans.", scan_buffer_.size());
+
 
     std::vector<DetectedObject> all_detections;
 
@@ -221,6 +223,7 @@ int TablesDetection::filter_and_count(const std::vector<DetectedObject>& candida
         if (bin.votes >= MIN_VOTES) {
             confirmed_count++;
             
+            RCLCPP_INFO(this->get_logger(),"Confirmed table at map coords (%.2f, %.2f) with %d votes", bin.x, bin.y, bin.votes);
             // create pose in map frame
             geometry_msgs::msg::PoseStamped p_map;
             p_map.pose.position.x = bin.x;

@@ -56,13 +56,11 @@ void CorridorNavigator::scanCallback(const sensor_msgs::msg::LaserScan::SharedPt
     in_corridor_ = false;
     return;
   }
-
+  
+  RCLCPP_INFO(this->get_logger(), "corridor Detected: the walls are parallel");
   if (!in_corridor_)
-  {
     stopNavigation();
-    RCLCPP_INFO(this->get_logger(), "Detected corridor - taking manual control");
-  }
-
+    
   in_corridor_ = true;
 
   //compute angolar speed to send to /cmd_vel
