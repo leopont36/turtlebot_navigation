@@ -16,6 +16,15 @@ the Intelligent Robotics course. The robot navigates to a goal position given by
 - LiDAR
 - Gazebo (simulation environment provided by course instructor)
 
+## Report
+The full project report is available [here](docs/report.pdf)
+
+
+## Demo
+https://github.com/user-attachments/assets/d7d75f08-7ce8-4939-9dbb-6ca27631d755
+[Watch high quality version on Google Drive](https://drive.google.com/file/d/1Dbm9LEF050eERIH8sGPA6Jor6-NZKNz8/view?usp=drive_link)
+
+
 ## Setup
 
 > This project requires a Gazebo simulation environment provided by the 
